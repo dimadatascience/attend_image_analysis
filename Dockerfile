@@ -1,8 +1,6 @@
 # Base image
 
 FROM debian:12.5
-# FROM --platform=linux/amd64 debian:12.5
-
 
 # Install system dependencies in one step to reduce layers
 RUN apt-get update && \
