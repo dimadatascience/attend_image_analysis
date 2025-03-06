@@ -1,14 +1,15 @@
 process pipex_preprocessing {
     //cpus 2
     //memory { task.memory + 10 * task.attempt}
+    publishDir "${params.outdir}/preprocessing"
     tag "pipex_preprocessing"
     container "docker://yinxiu/pipex:latest"
     
     input:
-    tuple val(patient_id), path(tiff)
+    path(images)
 
     output:
-    tuple val(patient_id), path("preprocessing_input/preprocessed"), path(tiff)
+    tuple path("preprocessing_input/preprocessed"), path(images)
 
     script:
     """

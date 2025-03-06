@@ -1,14 +1,14 @@
 process pipex_segmentation {
     //cpus 2
     //memory { task.memory + 10 * task.attempt}
-    publishDir "${params.outdir}/${patient_id}/segmentation", mode: 'copy'
+    publishDir "${params.outdir}/segmentation", mode: 'copy'
     tag "pipex_segmentation"
     container "docker://yinxiu/pipex:latest"
     
     input:
-    tuple val(patient_id), path(preprocessed), path(tiff) 
+    tuple path(preprocessed_dir), path(images) 
     output:
-    tuple val(patient_id), path("preprocessed/analysis/*")
+    tuple val(patient_id), path("preprocessed_dir/analysis/*")
 
     tuple val(patient_id), 
         path("preprocessed/analysis/cell_data.csv"), 
@@ -22,9 +22,9 @@ process pipex_segmentation {
     """
     export PIPEX_MAX_RESOLUTION=90000
 
-    echo "\$(date) INPUT DATA FOLDER (from preprocessing) ${preprocessed}: " >> ${params.log_file}
+    echo "\$(date) INPUT DATA FOLDER (from preprocessing) ${preprocessed_dir}: " >> ${params.log_file}
     echo "\$(date) Segmentation input files:" >> ${params.log_file}
-    ls -l ./${preprocessed} >> ${params.log_file}
+    ls -l ./${preprocessed_dir} >> ${params.log_file}
 
     channels=""
     for tiff in $tiff; do
@@ -44,7 +44,7 @@ process pipex_segmentation {
     # Segmentation step
 
     python -u -W ignore /pipex/segmentation.py \
-        -data=./${preprocessed} \
+        -data=./${preprocessed_dir} \
         -nuclei_marker=DAPI \
         -nuclei_diameter=20 \
         -nuclei_expansion=10 \
