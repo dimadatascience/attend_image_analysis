@@ -9,7 +9,7 @@ process pipex_preprocessing {
     path(images)
 
     output:
-    tuple path("preprocessing_input/preprocessed"), path(images)
+    tuple path("preprocessing_input/preprocessed/*tif")
 
     script:
     """
@@ -20,7 +20,7 @@ process pipex_preprocessing {
     export PIPEX_MAX_RESOLUTION=90000
 
     channels=""
-    for file in $tiff; do
+    for file in $images; do
         chname=`basename \$file | sed 's/.tiff//g' | sed 's/registered_//g' | cut -d'_' -f2-`
         channels+=" \$chname"
         cp \$file ./preprocessing_input

@@ -6,33 +6,32 @@ process pipex_segmentation {
     container "docker://yinxiu/pipex:latest"
     
     input:
-    tuple path(preprocessed_dir), path(images) 
-    output:
-    tuple val(patient_id), path("preprocessed_dir/analysis/*")
+    path(images) 
 
-    tuple val(patient_id), 
-        path("preprocessed/analysis/cell_data.csv"), 
-        path("preprocessed/analysis/quality_control"),
-        path("preprocessed/analysis/segmentation_binary_mask.tif"), 
-        path("preprocessed/analysis/segmentation_data.npy"), 
-        path("preprocessed/analysis/segmentation_mask.tif"), 
-        path("preprocessed/analysis/segmentation_mask_show.jpg")
+    output:
+    tuple path("segmentation_input/analysis/cell_data.csv"), 
+        path("segmentation_input/analysis/quality_control"),
+        path("segmentation_input/analysis/segmentation_binary_mask.tif"), 
+        path("segmentation_input/analysis/segmentation_data.npy"), 
+        path("segmentation_input/analysis/segmentation_mask.tif"), 
+        path("segmentation_input/analysis/segmentation_mask_show.jpg")
 
     script:
     """
     export PIPEX_MAX_RESOLUTION=90000
 
-    echo "\$(date) INPUT DATA FOLDER (from preprocessing) ${preprocessed_dir}: " >> ${params.log_file}
     echo "\$(date) Segmentation input files:" >> ${params.log_file}
-    ls -l ./${preprocessed_dir} >> ${params.log_file}
+
+    mkdir -p ./segmentation_input
 
     channels=""
-    for tiff in $tiff; do
-        chname=`basename \$tiff | sed 's/.tiff//g' | sed 's/registered_//g' | cut -d'_' -f2-`
+    for file in ${images}; do
+        chname=`basename \$file | sed 's/.tiff//g' | sed 's/registered_//g' | cut -d'_' -f2-`
         channels+=" \$chname"
+        cp \$file ./segmentation_input
     done
-    
     channels=`echo \$channels | sed 's/ /,/g'`
+
     echo "\$(date): pipex_segmentation: Channels to be quantified: \$channels" >> ${params.log_file}
 
     echo "\$(date) Performing image segmentation..." >> ${params.log_file}
@@ -44,7 +43,7 @@ process pipex_segmentation {
     # Segmentation step
 
     python -u -W ignore /pipex/segmentation.py \
-        -data=./${preprocessed_dir} \
+        -data=./segmentation_input \
         -nuclei_marker=DAPI \
         -nuclei_diameter=20 \
         -nuclei_expansion=10 \

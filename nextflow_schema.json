@@ -99,6 +99,10 @@
                     "type": "boolean",
                     "description": "Flag to indicate whether the pipeline should run in test mode (reduced memory usage)."
                 },
+                "preprocessing": {
+                    "type": "boolean",
+                    "description": "Flag to indicate whether preprocessing should be performed."
+                },
                 "executor": {
                     "type": "string",
                     "description": "Process executor ('pbspro' or 'local')."
