@@ -105,9 +105,14 @@ workflow {
 
     preprocess_dapi(preprocess_dapi_input)
 
-    pipex_segmentation_input = preprocess_dapi.out.combine(membrane_diameter_ch).combine(membrane_compactness_ch).combine(nuclei_expansion_ch)
+    // pipex_segmentation_input = preprocess_dapi.out.combine(membrane_diameter_ch).combine(membrane_compactness_ch).combine(nuclei_expansion_ch)
 
-    // pipex_segmentation_input.view()
+    params_ch = membrane_diameter_ch
+    .combine(membrane_compactness_ch)
+    .combine(nuclei_expansion_ch)
+    .filter { it[2].toInteger() > it[0].toInteger() }
+    
+    pipex_segmentation_input = preprocess_dapi.out.combine(params_ch).view()
 
     pipex_membrane_segmentation(pipex_segmentation_input)
     pipex_nuclei_segmentation(preprocess_dapi.out)
