@@ -29,8 +29,6 @@ process pipex_membrane_segmentation {
     input:
     tuple val(patient_id), path(tiff), val(membrane_diameter), val(membrane_compactness), val(nuclei_expansion)
     output:
-    // tuple val(patient_id), path("analysis/*")
-
     tuple val(patient_id), 
         path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/*DAPI.tiff"),
         path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/cell_data.csv"), 
