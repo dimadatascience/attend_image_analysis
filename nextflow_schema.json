@@ -45,6 +45,16 @@
                     "description": "Width of crop for image registration.",
                     "examples": [900]
                 },
+                "nuclei_expansion": {
+                    "type": "string",
+                    "description": "Nuclei expansion in pixels.",
+                    "examples": ["10,15"]
+                },
+                "membrane_diameter": {
+                    "type": "string",
+                    "description": "Membrane diameter in pixels.",
+                    "examples": ["10,15"]
+                },
                 "crop_size_diffeo": {
                     "type": "integer",
                     "description": "Height of crop for image registration.",

@@ -20,24 +20,27 @@ process preprocess_dapi {
 
 process pipex_membrane_segmentation {
     //cpus 2
-    //memory { task.memory + 10 * task.attempt}
-    publishDir "${params.outdir}/${patient_id}/segmentation/membrane", mode: 'copy'
+    memory { 70.GB }
+    publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/segmentation/membrane/", mode: 'copy'
     tag "pipex_segmentation"
     container "docker://yinxiu/pipex:latest"
+    // container "/hpcnfs/scratch/DIMA/chiodin/tests/segmentation_tests/yinxiu-pipex-latest.img"
     
     input:
-    tuple val(patient_id), path(tiff)
+    tuple val(patient_id), path(tiff), val(membrane_diameter), val(nuclei_expansion)
     output:
     // tuple val(patient_id), path("analysis/*")
 
     tuple val(patient_id), 
-        path("membrane_segmentation/*DAPI.tiff"),
-        path("membrane_segmentation/analysis/cell_data.csv"), 
-        path("membrane_segmentation/analysis/quality_control"),
-        path("membrane_segmentation/analysis/segmentation_binary_mask.tif"), 
-        path("membrane_segmentation/analysis/segmentation_data.npy"), 
-        path("membrane_segmentation/analysis/segmentation_mask.tif"), 
-        path("membrane_segmentation/analysis/segmentation_mask_show.jpg")
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/*DAPI.tiff"),
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/cell_data.csv"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/quality_control"),
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_binary_mask.tif"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_data.npy"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_mask.tif"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_mask_show.jpg"),
+        val(membrane_diameter), 
+        val(nuclei_expansion)
 
     script:
     """
@@ -45,14 +48,14 @@ process pipex_membrane_segmentation {
 
     echo "\$(date) Segmentation input files:" >> ${params.log_file}
 
-    mkdir -p ./membrane_segmentation
+    mkdir -p ./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}
 
     channels=""
     for file in $tiff; do
         chname=`basename \$file | sed 's/.tiff//g' | sed 's/prep_registered_//g' | cut -d'_' -f2-`
         channels+=" \$chname"
 
-        cp \$file ./membrane_segmentation
+        cp \$file ./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}
     done
     
     channels=`echo \$channels | sed 's/ /,/g'`
@@ -67,15 +70,15 @@ process pipex_membrane_segmentation {
     # Segmentation step
 
     python -u -W ignore /pipex/segmentation.py \
-        -data=./membrane_segmentation \
+        -data=./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter} \
         -measure_markers=\$channels \
         -nuclei_marker=DAPI \
         -nuclei_definition=0.5 \
         -nuclei_closeness=0.5 \
         -nuclei_diameter=5 \
-        -nuclei_expansion=15 \
+        -nuclei_expansion=${nuclei_expansion} \
         -membrane_marker=MEMBRANE \
-        -membrane_diameter=10 \
+        -membrane_diameter=${membrane_diameter} \
         -membrane_compactness=0.9
 
     echo "\$(date) Image segmentation done." >> ${params.log_file}
@@ -86,15 +89,16 @@ process pipex_membrane_segmentation {
 process pipex_nuclei_segmentation {
     //cpus 2
     //memory { task.memory + 10 * task.attempt}
-    publishDir "${params.outdir}/${patient_id}/segmentation/nuclei", mode: 'copy'
+    memory { 70.GB }
+    publishDir "${params.outdir}/${patient_id}/segmentation/nuclei/", mode: 'copy'
     tag "pipex_segmentation"
     container "docker://yinxiu/pipex:latest"
+    // container "/hpcnfs/scratch/DIMA/chiodin/tests/segmentation_tests/yinxiu-pipex-latest.img"
     
     input:
     tuple val(patient_id), path(tiff)
-    output:
-    // tuple val(patient_id), path("analysis/*")
 
+    output:
     tuple val(patient_id), 
         path("nuclei_segmentation/*DAPI.tiff"),
         path("nuclei_segmentation/analysis/cell_data.csv"), 
@@ -102,7 +106,9 @@ process pipex_nuclei_segmentation {
         path("nuclei_segmentation/analysis/segmentation_binary_mask.tif"), 
         path("nuclei_segmentation/analysis/segmentation_data.npy"), 
         path("nuclei_segmentation/analysis/segmentation_mask.tif"), 
-        path("nuclei_segmentation/analysis/segmentation_mask_show.jpg")
+        path("nuclei_segmentation/analysis/segmentation_mask_show.jpg"),
+        val(""), 
+        val("")
 
     script:
     """
@@ -143,3 +149,9 @@ process pipex_nuclei_segmentation {
     """
 }
 
+// {params.nuclei_definition}
+// {params.nuclei_closeness}
+// {params.nuclei_diameter}
+// {params.nuclei_expansion} 5 - 40  nuclei_expansion (5 - 15 - 30 - 40) 
+// {params.membrane_diameter} 5 - 40  membrane_diameter (5 - 10 - 20 - 40)
+// {params.membrane_compactness}
