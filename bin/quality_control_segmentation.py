@@ -53,6 +53,27 @@ def _parse_args():
         help="List of tiff single channel images.",
     )
     parser.add_argument(
+        "--nuclei_expansion",
+        type=int,
+        default=None,
+        required=False,
+        help="Integer value for nuclei expansion.",
+    )
+    parser.add_argument(
+        "--membrane_diameter",
+        type=int,
+        default=None,
+        required=False,
+        help="Integer value for membrane diameter.",
+    )
+    parser.add_argument(
+        "--membrane_compactness",
+        type=float,
+        default=None,
+        required=False,
+        help="Float value for membrane compactness.",
+    )
+    parser.add_argument(
         "--segmentation_mask",
         type=str,
         default=None,
@@ -82,6 +103,9 @@ if __name__ == "__main__":
 
     dapi_image = args.dapi_image
     segmentation_mask = args.segmentation_mask
+    nuclei_expansion = args.nuclei_expansion
+    membrane_diameter = args.membrane_diameter
+    membrane_compactness = args.membrane_compactness
 
     dapi = tiff.imread(dapi_image).astype("float32")
     mask = tiff.imread(segmentation_mask).astype("float32")
@@ -99,5 +123,4 @@ if __name__ == "__main__":
     )
 
     output_array = rescale_to_uint8(output_array)
-
-    tiff.imwrite(f"QC_segmentation_{dapi_image}", output_array)
+    tiff.imwrite(f"QC_segmentation_ne{nuclei_expansion}_md{membrane_diameter}_mc{membrane_compactness}_{dapi_image}", output_array)

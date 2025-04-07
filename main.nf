@@ -34,24 +34,15 @@ include { segmentation_quality_control as nuclei_segmentation_quality_control } 
 include { segmentation_quality_control as membrane_segmentation_quality_control } from './modules/local/quality_control/main.nf'
 
 
-def parse_csv_nuclei(csv_file_path) {
+def parse_conf_csv(csv_file_path) {
     channel
         .fromPath(csv_file_path)
         .splitCsv(header: true)
         .map { row ->
             return [
-                row.nuclei_expansion,           // Path to image
-            ]
-        }
-}
-
-def parse_csv_membrane(csv_file_path) {
-    channel
-        .fromPath(csv_file_path)
-        .splitCsv(header: true)
-        .map { row ->
-            return [
-                row.membrane_diameter,           // Path to image
+                row.membrane_diameter,
+                row.membrane_compactness,
+                row.nuclei_expansion
             ]
         }
 }
@@ -72,8 +63,27 @@ def parse_csv(csv_file_path) {
 
 workflow {
 
-    membr_diam_ch = parse_csv_membrane(params.membrane_diameter)
-    nuclei_exp_ch = parse_csv_nuclei(params.nuclei_expansion)
+    conf_ch = parse_conf_csv(params.conf_file)    
+
+    // conf_ch.view()
+    
+    membrane_diameter_ch = conf_ch.map { it ->
+        def membrane_diameter = it[0]
+        return [membrane_diameter]
+    }
+
+    membrane_compactness_ch = conf_ch.map { it ->
+        def membrane_compactness = it[1]
+        return [membrane_compactness]
+    }
+
+    nuclei_expansion_ch = conf_ch.map { it ->
+        def nuclei_expansion = it[2]
+        return [nuclei_expansion]
+    }
+
+    // membr_diam_ch = parse_csv_membrane(params.membrane_diameter)
+    // nuclei_exp_ch = parse_csv_nuclei(params.nuclei_expansion)
 
     parsed_csv_ch = parse_csv(params.input)
 
@@ -95,7 +105,7 @@ workflow {
 
     preprocess_dapi(preprocess_dapi_input)
 
-    pipex_segmentation_input = preprocess_dapi.out.combine(membr_diam_ch).combine(nuclei_exp_ch)
+    pipex_segmentation_input = preprocess_dapi.out.combine(membrane_diameter_ch).combine(membrane_compactness_ch).combine(nuclei_expansion_ch)
 
     // pipex_segmentation_input.view()
 
@@ -113,9 +123,10 @@ workflow {
             def segmentation_mask_show = it[7]
             def type = 'membrane'
             def membrane_diameter = it[8]
-            def nuclei_expansion = it[9]
+            def membrane_compactness = it[9]
+            def nuclei_expansion = it[10]
 
-            return [patient_id, dapi, segmentation_mask, type, membrane_diameter, nuclei_expansion]
+            return [patient_id, dapi, segmentation_mask, type, membrane_diameter, membrane_compactness, nuclei_expansion]
     }
 
     nuclei_segmentation_quality_control_input =  pipex_nuclei_segmentation.out.map { it ->
@@ -129,10 +140,12 @@ workflow {
             def segmentation_mask_show = it[7]
             def type = 'nuclei'
             def membrane_diameter = it[8]
-            def nuclei_expansion = it[9]
+            def membrane_compactness = it[9]
+            def nuclei_expansion = it[10]
 
-            return [patient_id, dapi, segmentation_mask, type, membrane_diameter, nuclei_expansion]
+            return [patient_id, dapi, segmentation_mask, type, membrane_diameter, membrane_compactness, nuclei_expansion]
     } 
+
 
     membrane_segmentation_quality_control(membrane_segmentation_quality_control_input)
     nuclei_segmentation_quality_control(nuclei_segmentation_quality_control_input)

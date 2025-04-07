@@ -21,25 +21,26 @@ process preprocess_dapi {
 process pipex_membrane_segmentation {
     //cpus 2
     memory { 70.GB }
-    publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/segmentation/membrane/", mode: 'copy'
+    publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/segmentation/membrane/", mode: 'copy'
     tag "pipex_segmentation"
     container "docker://yinxiu/pipex:latest"
     // container "/hpcnfs/scratch/DIMA/chiodin/tests/segmentation_tests/yinxiu-pipex-latest.img"
     
     input:
-    tuple val(patient_id), path(tiff), val(membrane_diameter), val(nuclei_expansion)
+    tuple val(patient_id), path(tiff), val(membrane_diameter), val(membrane_compactness), val(nuclei_expansion)
     output:
     // tuple val(patient_id), path("analysis/*")
 
     tuple val(patient_id), 
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/*DAPI.tiff"),
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/cell_data.csv"), 
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/quality_control"),
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_binary_mask.tif"), 
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_data.npy"), 
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_mask.tif"), 
-        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/analysis/segmentation_mask_show.jpg"),
-        val(membrane_diameter), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/*DAPI.tiff"),
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/cell_data.csv"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/quality_control"),
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/segmentation_binary_mask.tif"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/segmentation_data.npy"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/segmentation_mask.tif"), 
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/segmentation_mask_show.jpg"),
+        val(membrane_diameter),
+        val(membrane_compactness), 
         val(nuclei_expansion)
 
     script:
@@ -48,14 +49,14 @@ process pipex_membrane_segmentation {
 
     echo "\$(date) Segmentation input files:" >> ${params.log_file}
 
-    mkdir -p ./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}
+    mkdir -p ./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}
 
     channels=""
     for file in $tiff; do
         chname=`basename \$file | sed 's/.tiff//g' | sed 's/prep_registered_//g' | cut -d'_' -f2-`
         channels+=" \$chname"
 
-        cp \$file ./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}
+        cp \$file ./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}
     done
     
     channels=`echo \$channels | sed 's/ /,/g'`
@@ -70,7 +71,7 @@ process pipex_membrane_segmentation {
     # Segmentation step
 
     python -u -W ignore /pipex/segmentation.py \
-        -data=./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter} \
+        -data=./membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness} \
         -measure_markers=\$channels \
         -nuclei_marker=DAPI \
         -nuclei_definition=0.5 \
@@ -79,7 +80,7 @@ process pipex_membrane_segmentation {
         -nuclei_expansion=${nuclei_expansion} \
         -membrane_marker=MEMBRANE \
         -membrane_diameter=${membrane_diameter} \
-        -membrane_compactness=0.9
+        -membrane_compactness=${membrane_compactness}
 
     echo "\$(date) Image segmentation done." >> ${params.log_file}
     """
@@ -108,6 +109,7 @@ process pipex_nuclei_segmentation {
         path("nuclei_segmentation/analysis/segmentation_mask.tif"), 
         path("nuclei_segmentation/analysis/segmentation_mask_show.jpg"),
         val(""), 
+        val(""),
         val("")
 
     script:

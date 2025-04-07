@@ -35,6 +35,11 @@
                     "description": "Path to output directory (the .ome.tiff files).",
                     "examples": ["/path/to/dir"]
                 },
+                "conf_file": {
+                    "type": "string",
+                    "description": "Path to csv file containing the segmentation parameters.",
+                    "examples": ["/path/to/file.csv"]
+                },
                 "crop_size_preproc": {
                     "type": "integer",
                     "description": "Width of crop for preprocessing.",

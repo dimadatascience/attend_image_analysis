@@ -31,7 +31,7 @@ process segmentation_quality_control{
     cpus 1
     maxRetries = 3
     // memory { 70.GB }
-    publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}/segmentation/quality_control/${type}", mode: 'copy', pattern: "QC_*"
+    publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/segmentation/quality_control/${type}", mode: 'copy', pattern: "QC_*"
     tag "segmentation_quality_control"
     
     input:
@@ -40,6 +40,7 @@ process segmentation_quality_control{
             path(segmentation_mask),
             val(type),
             val(membrane_diameter), 
+            val(membrane_compactness),
             val(nuclei_expansion)
 
     output:
@@ -48,11 +49,26 @@ process segmentation_quality_control{
     script:
     """
     echo "\$(date) Memory allocated to process "segmentation_quality_control": ${task.memory}" >> ${params.log_file}
-
+    if [ "${type}" == "membrane" ]; then
+        echo "\$(date) Segmentation type: membrane" >> ${params.log_file}
+        quality_control_segmentation.py \
+            --patient_id $patient_id \
+            --dapi_image $dapi_image \
+            --segmentation_mask $segmentation_mask \
+            --membrane_diameter $membrane_diameter \
+            --membrane_compactness $membrane_compactness \
+            --nuclei_expansion $nuclei_expansion \
+            --log_file "${params.log_file}"
+    elif [ "${type}" == "nuclei" ]; then
+        echo "\$(date) Segmentation type: nuclei" >> ${params.log_file}
         quality_control_segmentation.py \
             --patient_id $patient_id \
             --dapi_image $dapi_image \
             --segmentation_mask $segmentation_mask \
             --log_file "${params.log_file}"
+    else
+        echo "\$(date) Segmentation type: unknown" >> ${params.log_file}
+    fi
+        
     """
 }
