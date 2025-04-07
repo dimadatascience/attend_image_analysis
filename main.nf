@@ -62,10 +62,7 @@ def parse_csv(csv_file_path) {
 
 
 workflow {
-
     conf_ch = parse_conf_csv(params.conf_file)    
-
-    // conf_ch.view()
     
     membrane_diameter_ch = conf_ch.map { it ->
         def membrane_diameter = it[0]
@@ -82,18 +79,11 @@ workflow {
         return [nuclei_expansion]
     }
 
-    // membr_diam_ch = parse_csv_membrane(params.membrane_diameter)
-    // nuclei_exp_ch = parse_csv_nuclei(params.nuclei_expansion)
-
     parsed_csv_ch = parse_csv(params.input)
 
     create_membrane_channel_input = parsed_csv_ch.groupTuple()
 
-    // create_membrane_channel_input.view()
-
     create_membrane_channel(create_membrane_channel_input)
-
-    // create_membrane_channel.out.view()
 
     preprocess_dapi_input = create_membrane_channel.out.map{ it -> 
         def patient_id = it[0]
@@ -105,14 +95,12 @@ workflow {
 
     preprocess_dapi(preprocess_dapi_input)
 
-    // pipex_segmentation_input = preprocess_dapi.out.combine(membrane_diameter_ch).combine(membrane_compactness_ch).combine(nuclei_expansion_ch)
-
     params_ch = membrane_diameter_ch
     .combine(membrane_compactness_ch)
     .combine(nuclei_expansion_ch)
     .filter { it[2].toInteger() > it[0].toInteger() }
     
-    pipex_segmentation_input = preprocess_dapi.out.combine(params_ch).view()
+    pipex_segmentation_input = preprocess_dapi.out.combine(params_ch)
 
     pipex_membrane_segmentation(pipex_segmentation_input)
     pipex_nuclei_segmentation(preprocess_dapi.out)
