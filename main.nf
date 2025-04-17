@@ -30,8 +30,8 @@ include { pipex_nuclei_segmentation } from './modules/local/segmentation/main.nf
 include { preprocess_dapi } from './modules/local/segmentation/main.nf'
 include { deduplicate_files } from './modules/local/deduplicate_files/main.nf'
 include { create_membrane_channel } from './modules/local/create_membrane_channel/main.nf'
-include { segmentation_quality_control as nuclei_segmentation_quality_control } from './modules/local/quality_control/main.nf'
-include { segmentation_quality_control as membrane_segmentation_quality_control } from './modules/local/quality_control/main.nf'
+include { segmentation_quality_control } from './modules/local/quality_control/main.nf'
+include { nuclei_segmentation_quality_control } from './modules/local/quality_control/main.nf'
 
 
 def parse_conf_csv(csv_file_path) {
@@ -79,6 +79,18 @@ workflow {
         return [nuclei_expansion]
     }
 
+    params_ch = membrane_diameter_ch
+    .combine(membrane_compactness_ch)
+    .combine(nuclei_expansion_ch)
+    .filter { it[2].toInteger() > it[0].toInteger() }
+    .unique()
+
+    params_ch
+    .count()
+    // .view()
+
+    // params_ch.view()
+
     parsed_csv_ch = parse_csv(params.input)
 
     create_membrane_channel_input = parsed_csv_ch.groupTuple()
@@ -95,12 +107,11 @@ workflow {
 
     preprocess_dapi(preprocess_dapi_input)
 
-    params_ch = membrane_diameter_ch
-    .combine(membrane_compactness_ch)
-    .combine(nuclei_expansion_ch)
-    .filter { it[2].toInteger() > it[0].toInteger() }
+    
     
     pipex_segmentation_input = preprocess_dapi.out.combine(params_ch)
+
+    // pipex_segmentation_input.view()
 
     pipex_membrane_segmentation(pipex_segmentation_input)
     pipex_nuclei_segmentation(preprocess_dapi.out)
@@ -108,18 +119,19 @@ workflow {
     membrane_segmentation_quality_control_input = pipex_membrane_segmentation.out.map { it ->
             def patient_id = it[0]
             def dapi = it[1]
-            def cell_data = it[2]
-            def quality_control = it[3]
-            def segmentation_binary_mask  = it[4]
-            def segmentation_data  = it[5]
-            def segmentation_mask  = it[6]
-            def segmentation_mask_show = it[7]
+            def membrane = it[2]
+            def cell_data = it[3]
+            def quality_control = it[4]
+            def segmentation_binary_mask  = it[5]
+            def segmentation_data  = it[6]
+            def segmentation_mask  = it[7]
+            def segmentation_mask_show = it[8]
             def type = 'membrane'
-            def membrane_diameter = it[8]
-            def membrane_compactness = it[9]
-            def nuclei_expansion = it[10]
+            def membrane_diameter = it[9]
+            def membrane_compactness = it[10]
+            def nuclei_expansion = it[11]
 
-            return [patient_id, dapi, segmentation_mask, type, membrane_diameter, membrane_compactness, nuclei_expansion]
+            return [patient_id, dapi, membrane, segmentation_mask, type, membrane_diameter, membrane_compactness, nuclei_expansion]
     }
 
     nuclei_segmentation_quality_control_input =  pipex_nuclei_segmentation.out.map { it ->
@@ -140,6 +152,6 @@ workflow {
     } 
 
 
-    membrane_segmentation_quality_control(membrane_segmentation_quality_control_input)
+    segmentation_quality_control(membrane_segmentation_quality_control_input)
     nuclei_segmentation_quality_control(nuclei_segmentation_quality_control_input)
 }

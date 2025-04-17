@@ -24,18 +24,26 @@ def power(image, a):
 
 
 def gamma_correction(image, gamma):
+    logger.debug(f"gamma_correction: Computing max intensity.")
     max_intensity = np.max(image)
+    logger.debug(f"gamma_correction: Multiplying by scalar.")
     image = multiply_image_and_scalar(image, 1.0 / max_intensity)
+    logger.debug(f"gamma_correction: Elevating to the power of gamma.")
     image = power(image, gamma)
+    logger.debug(f"gamma_correction: Multiplhing by scalar.")
     image = multiply_image_and_scalar(image, max_intensity)
 
     return image
 
 
 def dapi_preprocessing(image):
+    logger.debug("dapi_preprocessing: Applying gamma correction.")
     image = gamma_correction(image, 0.6)
+    logger.debug("dapi_preprocessing: Computing white top hat.")
     image = morphology.white_tophat(image, footprint=morphology.disk(50))
+    logger.debug(f"dapi_preprocessing: Converting image to float32.")
     image = np.array(image, dtype="float32")
+    logger.debug("dapi_preprocessing: Applying Gaussian filter.")
     image = gaussian(image, sigma=1.0)
 
     return image

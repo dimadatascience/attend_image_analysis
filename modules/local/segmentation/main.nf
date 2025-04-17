@@ -1,5 +1,5 @@
 process preprocess_dapi {
-    //cpus 2
+    // cpus 5
     //memory { task.memory + 10 * task.attempt}
     
     input:
@@ -19,7 +19,7 @@ process preprocess_dapi {
 
 
 process pipex_membrane_segmentation {
-    //cpus 2
+    // cpus 5
     memory { 70.GB }
     publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/segmentation/membrane/", mode: 'copy'
     tag "pipex_segmentation"
@@ -31,6 +31,7 @@ process pipex_membrane_segmentation {
     output:
     tuple val(patient_id), 
         path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/*DAPI.tiff"),
+        path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/*MEMBRANE.tiff"),
         path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/cell_data.csv"), 
         path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/quality_control"),
         path("membrane_segmentation_${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/analysis/segmentation_binary_mask.tif"), 

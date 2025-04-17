@@ -37,6 +37,7 @@ process segmentation_quality_control{
     input:
         tuple val(patient_id), 
             path(dapi_image),
+            path(membrane_image),
             path(segmentation_mask),
             val(type),
             val(membrane_diameter), 
@@ -54,6 +55,7 @@ process segmentation_quality_control{
         quality_control_segmentation.py \
             --patient_id $patient_id \
             --dapi_image $dapi_image \
+            --membrane_image $membrane_image \
             --segmentation_mask $segmentation_mask \
             --membrane_diameter $membrane_diameter \
             --membrane_compactness $membrane_compactness \
@@ -70,5 +72,36 @@ process segmentation_quality_control{
         echo "\$(date) Segmentation type: unknown" >> ${params.log_file}
     fi
         
+    """
+}
+
+
+
+process nuclei_segmentation_quality_control{
+    cpus 1
+    maxRetries = 3
+    // memory { 70.GB }
+    publishDir "${params.outdir}/${patient_id}/${patient_id}_ne${nuclei_expansion}_md${membrane_diameter}_mc${membrane_compactness}/segmentation/quality_control/${type}", mode: 'copy', pattern: "QC_*"
+    tag "segmentation_quality_control"
+    
+    input:
+        tuple val(patient_id), 
+            path(dapi_image),
+            path(segmentation_mask),
+            val(type),
+            val(membrane_diameter), 
+            val(membrane_compactness),
+            val(nuclei_expansion)
+
+    output:
+        tuple val(patient_id), path("QC*")
+ 
+    script:
+    """
+    quality_control_segmentation.py \
+        --patient_id $patient_id \
+        --dapi_image $dapi_image \
+        --segmentation_mask $segmentation_mask \
+        --log_file "${params.log_file}"
     """
 }

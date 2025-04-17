@@ -1,6 +1,6 @@
 process create_membrane_channel {
     //cpus 2
-    //memory { task.memory + 10 * task.attempt}
+    memory { 70.GB }
     tag "create_membrane_channel"
     
     input:
