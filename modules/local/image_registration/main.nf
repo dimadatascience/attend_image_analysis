@@ -3,10 +3,12 @@
 */
 
 process affine{
-    cpus 2
+    cpus 5
     maxRetries = 3
     memory { task.memory + 10 * task.attempt}
     tag "affine"
+
+    /*container "docker://bolt3x/attend_image_analysis:v2.3"*/
 
     input:
         tuple val(patient_id), path(moving), path(fixed), path(channels_to_register)
@@ -32,11 +34,15 @@ process affine{
  
 
 process diffeomorphic{
-    cpus 1
+    cpus 4
     maxRetries = 3
-    memory { 2.GB * task.attempt }
+    memory { 15.GB * task.attempt }
     array { task.array }
+    time '10m'
     tag "diffeomorphic"
+    
+    clusterOptions = '--gres=gpu:nvidia_h200:1'
+    container "docker://bolt3x/attend_image_analysis:v2.4"
 
     input:
         tuple val(patient_id), path(moving), path(fixed), path(crop), path(channels_to_register)

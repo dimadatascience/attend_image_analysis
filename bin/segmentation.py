@@ -251,6 +251,7 @@ class SegmentationPipeline:
             verbose: Whether to print progress messages
         """
         self.model = StarDist2D(None, name=model_name, basedir=model_path)
+        self.model.config.use_gpu = True
         self.verbose = verbose
         self.processor = ImageProcessor()
     
@@ -304,7 +305,7 @@ class SegmentationPipeline:
         self.log(f'Processing entire image (shape: {image.shape})')
         
         # Predict instances on whole image
-        pred, _ = self.model.predict_instances(image, verbose=False)
+        pred, _ = self.model.predict_instances(image, n_tiles=(4,4), verbose=False)
         
         # Expand labels
         expanded_pred = segmentation.expand_labels(pred, distance=10, spacing=1)
@@ -460,7 +461,7 @@ def main():
     gc.collect()
     
     # Apply crop if specified
-    if args.crop:
+    if False:
         row_start, row_end, col_start, col_end = args.crop
         image_to_process = dapi_normalized[row_start:row_end, col_start:col_end]
         pipeline.log(f"Applied crop: [{row_start}:{row_end}, {col_start}:{col_end}]")
@@ -472,7 +473,7 @@ def main():
     # Perform segmentation
     start_time = time.time()
     
-    if args.whole_image:
+    if True:
         pipeline.log("Processing entire image without cropping...")
         segmentation_mask = pipeline.predict_whole_image(image_to_process)
         _, positions = crop_array(image_to_process, args.overlap)
