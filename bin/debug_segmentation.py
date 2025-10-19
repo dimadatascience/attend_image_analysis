@@ -1,48 +1,59 @@
 #!/usr/bin/env python
 
 import argparse
-import os
-import tifffile as tiff
 import logging
+import os
+import pickle
+import tifffile as tiff
+import numpy as np
 from utils import logging_config
-from utils.io import load_nd2, load_h5
+
+import numpy as np
+from aicsimageio import AICSImage
+from csbdeep.utils import normalize
+from skimage import segmentation
+from stardist.models import StarDist2D
+
 
 
 # Set up logging configuration
 logging_config.setup_logging()
 logger = logging.getLogger(__name__)
 
-
+# Read crop path, mapping and log file from command line arguments
 def _parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-p",
-        "--patient_id",
+        "-s",
+        "--semgmentation_mask",
         type=str,
         default=None,
         required=True,
-        help="A string containing the current patient id.",
+        help="npy file containing segmentation mask."
     )
     parser.add_argument(
-        "-i",
-        "--image",
+        "-od",
+        "--output_dir",
         type=str,
         default=None,
         required=True,
-        help="Path to nd2 multichannel image.",
+        help="Directory to save output files.",
     )
     parser.add_argument(
-        "-l",
+        "-log",
         "--log_file",
         type=str,
         required=False,
         help="Path to log file.",
     )
-
-    args = parser.parse_args()
-    return args
-
+    parser.add_argument(
+        "-o",
+        "--output_file",
+        type=str,
+        required=True,
+        help="Path to output file containing IoU score.",
+    )
 
 def main():
     args = _parse_args()
@@ -54,27 +65,13 @@ def main():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-    # image = load_nd2(args.image)
+    # Load segmentation mask
+    seg_mask = np.load(args.semgmentation_mask)
 
-    extension = args.image.split(".")[1]
+    quality_score = 1
 
-    if extension == "nd2":
-        image = load_nd2(args.image)
-    elif extension == "h5":
-        image = load_h5(args.image)
-    elif extension == "tiff" or extension == "tif":
-        image = tiff.imread(args.image)
-
-    base = os.path.basename(args.image)
-
-    if "__" in base:
-        base = base.replace("__", "-")
-
-    channel_names = base.split(".")[0].split("_")[1:][::-1]
-
-    for idx, ch in enumerate(channel_names):
-        tiff.imsave(f"{args.patient_id}_{ch}.tiff", image[idx, :, :])
-
+    with open(os.path.join(args.output_dir, args.output_file), 'w') as f:
+        f.write(f"{quality_score}\n")
 
 if __name__ == "__main__":
     main()
