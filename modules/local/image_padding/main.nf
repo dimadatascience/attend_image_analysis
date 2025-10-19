@@ -22,7 +22,7 @@ process get_padding{
 }
 
 process apply_padding{
-    cpus 10
+    cpus 2
     maxRetries = 3
     memory { task.memory + 10 * task.attempt} 
     tag "apply_padding"

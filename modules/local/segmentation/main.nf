@@ -1,13 +1,10 @@
 process segmentation{
-    cpus 8
+    cpus 1
     maxRetries = 3
     memory 300.GB
+    time 48.h
     publishDir "${params.outdir}/${patient_id}/segmentation", mode: 'copy', pattern: "*.{pkl,npy}"
-   
-    time '2h'
-    container = params.use_gpu ? "docker://bolt3x/attend_image_analysis:segmentation_gpu" : "docker://yinxiu/attend_seg:v0.0"
-    clusterOptions = params.use_gpu ? '--gres=gpu:nvidia_h200:1' : null
-
+    container "docker://yinxiu/attend_seg:v0.0"
     tag "segmentation"
 
     input:
@@ -23,7 +20,6 @@ process segmentation{
         --model-dir "${params.segmentation_model_dir}" \
         --model-name "${params.segmentation_model}" \
         --overlap "${params.segmentation_overlap}" \
-        --use_gpu ${params.use_gpu} \
         --output-dir "./" \
         --verbose
         

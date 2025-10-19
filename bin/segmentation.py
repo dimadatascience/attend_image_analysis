@@ -241,7 +241,7 @@ class ImageProcessor:
 class SegmentationPipeline:
     """Main pipeline for cell segmentation using StarDist."""
     
-    def __init__(self, model_path: str, model_name: str, use_gpu: bool = True, verbose: bool = True):
+    def __init__(self, model_path: str, model_name: str, verbose: bool = True):
         """
         Initialize the segmentation pipeline.
         
@@ -251,7 +251,6 @@ class SegmentationPipeline:
             verbose: Whether to print progress messages
         """
         self.model = StarDist2D(None, name=model_name, basedir=model_path)
-        self.model.config.use_gpu = use_gpu 
         self.verbose = verbose
         self.processor = ImageProcessor()
     
@@ -305,7 +304,7 @@ class SegmentationPipeline:
         self.log(f'Processing entire image (shape: {image.shape})')
         
         # Predict instances on whole image
-        pred, _ = self.model.predict_instances(image, n_tiles=(16,16), verbose=False)
+        pred, _ = self.model.predict_instances(image, verbose=False)
         
         # Expand labels
         expanded_pred = segmentation.expand_labels(pred, distance=10, spacing=1)
@@ -417,13 +416,6 @@ Example usage:
     )
     
     parser.add_argument(
-        '--use_gpu',
-        type=bool,
-        default=True,
-        help='Whether to use GPU for model inference (default: True)'
-    )
-
-    parser.add_argument(
         '--output-dir',
         type=str,
         default='./output',
@@ -454,7 +446,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
     
     # Initialize pipeline
-    pipeline = SegmentationPipeline(args.model_dir, args.model_name, args.use_gpu, args.verbose)
+    pipeline = SegmentationPipeline(args.model_dir, args.model_name, args.verbose)
     
     # Load and process DAPI image
     pipeline.log(f"Loading DAPI image: {args.dapi_file}")
@@ -468,7 +460,7 @@ def main():
     gc.collect()
     
     # Apply crop if specified
-    if False:
+    if args.crop:
         row_start, row_end, col_start, col_end = args.crop
         image_to_process = dapi_normalized[row_start:row_end, col_start:col_end]
         pipeline.log(f"Applied crop: [{row_start}:{row_end}, {col_start}:{col_end}]")
@@ -480,7 +472,7 @@ def main():
     # Perform segmentation
     start_time = time.time()
     
-    if True:
+    if args.whole_image:
         pipeline.log("Processing entire image without cropping...")
         segmentation_mask = pipeline.predict_whole_image(image_to_process)
         _, positions = crop_array(image_to_process, args.overlap)

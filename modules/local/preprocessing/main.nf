@@ -1,5 +1,5 @@
 process pipex_preprocessing {
-    cpus 10
+    //cpus 2
     memory { 300.GB }
     tag "pipex_preprocessing"
     container 'docker://alech00/attend_image_analysis:v2.1'
