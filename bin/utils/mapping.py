@@ -2,9 +2,8 @@
 
 import cv2
 import numpy as np
-import cupy as cp
-from cudipy.align.imwarp import SymmetricDiffeomorphicRegistration
-from cudipy.align.metrics import CCMetric
+from dipy.align.imwarp import SymmetricDiffeomorphicRegistration
+from dipy.align.metrics import CCMetric
 
 
 def apply_mapping(mapping, x, method="dipy"):
@@ -25,7 +24,7 @@ def apply_mapping(mapping, x, method="dipy"):
 
     # Apply the mapping based on the selected method
     if method == "dipy":
-        mapped = mapping.transform(x).get()
+        mapped = mapping.transform(x)
     elif method == "cv2":
         height, width = x.shape[:2]
         mapped = cv2.warpAffine(x, mapping, (width, height))
@@ -108,15 +107,12 @@ def compute_diffeomorphic_mapping_dipy(
         raise ValueError(
             "Reference image (y) and moving image (x) must have the same shape."
         )
-        
-    y_gpu = cp.asarray(y)
-    x_gpu = cp.asarray(x)
-    
+
     # Define the metric and create the Symmetric Diffeomorphic Registration object
     metric = CCMetric(2, sigma_diff=sigma_diff, radius=radius)
     sdr = SymmetricDiffeomorphicRegistration(metric, opt_tol=1e-04, inv_tol=0.01)
 
     # Perform the diffeomorphic registration using the pre-alignment from affine registration
-    mapping = sdr.optimize(y_gpu, x_gpu)
+    mapping = sdr.optimize(y, x)
 
     return mapping

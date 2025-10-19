@@ -1,5 +1,5 @@
 process quality_control{
-    cpus 3
+    cpus 1
     maxRetries = 3
     memory { task.memory + 10 * task.attempt}
     time "12.h"

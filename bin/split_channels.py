@@ -62,7 +62,7 @@ def main():
         image = load_nd2(args.image)
     elif extension == "h5":
         image = load_h5(args.image)
-    elif extension == "tiff" or extension == "tif":
+    elif extension == "tiff":
         image = tiff.imread(args.image)
 
     base = os.path.basename(args.image)
